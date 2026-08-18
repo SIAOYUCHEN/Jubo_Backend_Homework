@@ -6,14 +6,14 @@ public static class SeedData
 {
     public static readonly Guid[] PatientIds =
     {
-        Guid.Parse("11111111-1111-1111-1111-111111111111"),
-        Guid.Parse("22222222-2222-2222-2222-222222222222"),
-        Guid.Parse("33333333-3333-3333-3333-333333333333"),
-        Guid.Parse("44444444-4444-4444-4444-444444444444"),
-        Guid.Parse("55555555-5555-5555-5555-555555555555"),
+        Guid.Parse("b2cc2f38-22ec-4236-be7e-08445071a3d2"),
+        Guid.Parse("9a36db19-860d-40cf-8277-d4c53ca99bd0"),
+        Guid.Parse("6891fed6-bfb8-478e-8993-abfd66ed859e"),
+        Guid.Parse("aff37c0c-9146-4329-92c8-f63202ccc1de"),
+        Guid.Parse("d2836813-d635-412e-ade8-ef3958e3cd39"),
     };
 
-    public static readonly Guid DemoUserId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+    public static readonly Guid DemoUserId = Guid.Parse("1220680d-0d0b-423f-a4ff-4653a15b77f6");
 
     // BCrypt.Net.BCrypt.HashPassword("demo")
     public const string DemoUserPasswordHash = "$2a$11$lKXu3UJut3gYYXQB3wuoWO4eZwxIHEfJahCOUXS2cIDd6eYk.xxVi";
