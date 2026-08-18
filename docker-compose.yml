@@ -6,14 +6,12 @@ services:
     ports:
       - "8000:8000"
     environment:
+      # Only container-topology values live here (service hostnames differ from
+      # appsettings.json's localhost defaults). Jwt/RefreshToken config stays in
+      # appsettings.json — see that file to change secrets/expiry.
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=jubo;Username=jubo;Password=jubo"
       ConnectionStrings__Redis: "redis:6379"
-      Jwt__SecretKey: "CHANGE_ME_dev_only_secret_key_please_override_in_production_env"
-      Jwt__Issuer: "JuboBackend"
-      Jwt__Audience: "JuboFrontend"
-      Jwt__AccessTokenExpiryMinutes: "60"
-      RefreshToken__ExpiryDays: "1"
     depends_on:
       postgres:
         condition: service_healthy
