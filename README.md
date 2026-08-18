@@ -1,6 +1,6 @@
 # Jubo_Backend_Homework
 
-Patient / Order 管理系統後端。.NET 8、Clean Architecture（Domain / Application / Infrastructure / WebApi）+ CQRS + MediatR，PostgreSQL + EF Core，Redis 存 refresh token。詳細規格見 [SPEC.md](./SPEC.md)。
+Patient / Order 管理系統後端。.NET 8、Clean Architecture（Domain / Application / Infrastructure / WebApi）+ CQRS + MediatR，PostgreSQL + EF Core，Redis 存 refresh token。
 
 ## 啟動方式（Docker）
 
