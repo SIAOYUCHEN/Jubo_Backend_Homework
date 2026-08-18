@@ -1,0 +1,46 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=jubo;Username=jubo;Password=jubo"
+      ConnectionStrings__Redis: "redis:6379"
+      Jwt__SecretKey: "CHANGE_ME_dev_only_secret_key_please_override_in_production_env"
+      Jwt__Issuer: "JuboBackend"
+      Jwt__Audience: "JuboFrontend"
+      Jwt__AccessTokenExpiryMinutes: "60"
+      RefreshToken__ExpiryDays: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: jubo
+      POSTGRES_USER: jubo
+      POSTGRES_PASSWORD: jubo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jubo -d jubo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

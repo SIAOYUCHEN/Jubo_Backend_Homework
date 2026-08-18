@@ -1,10 +1,6 @@
-using System.Collections.Generic;
-using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
 
@@ -40,10 +36,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
         await _postgres.StartAsync();
         await _redis.StartAsync();
 
-        // Force host creation now so migrations run against the started containers.
-        using var scope = Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await context.Database.MigrateAsync();
+        // Force host creation now (Program.cs runs migrations against the started containers on startup).
+        _ = Services;
     }
 
     async Task IAsyncLifetime.DisposeAsync()
