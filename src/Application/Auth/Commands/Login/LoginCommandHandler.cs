@@ -10,16 +10,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResultDto>
 {
     private readonly IApplicationDbContext _context;
     private readonly IJwtTokenService _jwtTokenService;
-    private readonly IRefreshTokenStore _refreshTokenStore;
 
-    public LoginCommandHandler(
-        IApplicationDbContext context,
-        IJwtTokenService jwtTokenService,
-        IRefreshTokenStore refreshTokenStore)
+    public LoginCommandHandler(IApplicationDbContext context, IJwtTokenService jwtTokenService)
     {
         _context = context;
         _jwtTokenService = jwtTokenService;
-        _refreshTokenStore = refreshTokenStore;
     }
 
     public async Task<AuthResultDto> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -34,7 +29,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResultDto>
 
         var accessToken = _jwtTokenService.GenerateAccessToken(user);
         var refreshToken = _jwtTokenService.GenerateRefreshToken(user.Id);
-        await _refreshTokenStore.RegisterAsync(refreshToken.Jti, user.Id, cancellationToken);
 
         return new AuthResultDto { AccessToken = accessToken, RefreshToken = refreshToken.Token };
     }

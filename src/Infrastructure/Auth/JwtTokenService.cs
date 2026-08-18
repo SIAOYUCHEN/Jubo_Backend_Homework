@@ -82,13 +82,13 @@ public class JwtTokenService : IJwtTokenService
         try
         {
             var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
-            var principal = handler.ValidateToken(token, ValidationParameters(_settings.RefreshAudience, validateLifetime: true), out _);
+            var principal = handler.ValidateToken(token, ValidationParameters(_settings.RefreshAudience, validateLifetime: true), out var validated);
 
             var sub = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
             var jti = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
 
             return sub is not null && jti is not null && Guid.TryParse(sub, out var userId)
-                ? new RefreshTokenValidationResult(userId, jti)
+                ? new RefreshTokenValidationResult(userId, jti, ((JwtSecurityToken)validated).ValidTo)
                 : null;
         }
         catch (Exception ex) when (ex is SecurityTokenException or ArgumentException)

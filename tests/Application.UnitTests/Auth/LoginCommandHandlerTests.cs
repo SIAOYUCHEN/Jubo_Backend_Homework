@@ -19,22 +19,20 @@ public class LoginCommandHandlerTests
         jwtService.Setup(s => s.GenerateAccessToken(It.IsAny<User>())).Returns("access-token");
         jwtService.Setup(s => s.GenerateRefreshToken(SeedData.DemoUserId))
             .Returns(new RefreshTokenIssueResult("refresh-token", "jti-1"));
-        var refreshStore = new Mock<IRefreshTokenStore>();
 
-        var handler = new LoginCommandHandler(context, jwtService.Object, refreshStore.Object);
+        var handler = new LoginCommandHandler(context, jwtService.Object);
 
         var result = await handler.Handle(new LoginCommand("demo", "demo"), CancellationToken.None);
 
         result.AccessToken.Should().Be("access-token");
         result.RefreshToken.Should().Be("refresh-token");
-        refreshStore.Verify(s => s.RegisterAsync("jti-1", SeedData.DemoUserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Handle_WrongPassword_ThrowsInvalidCredentials()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new LoginCommandHandler(context, Mock.Of<IJwtTokenService>(), Mock.Of<IRefreshTokenStore>());
+        var handler = new LoginCommandHandler(context, Mock.Of<IJwtTokenService>());
 
         var act = () => handler.Handle(new LoginCommand("demo", "wrong-password"), CancellationToken.None);
 
@@ -45,7 +43,7 @@ public class LoginCommandHandlerTests
     public async Task Handle_UnknownUsername_ThrowsInvalidCredentials()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new LoginCommandHandler(context, Mock.Of<IJwtTokenService>(), Mock.Of<IRefreshTokenStore>());
+        var handler = new LoginCommandHandler(context, Mock.Of<IJwtTokenService>());
 
         var act = () => handler.Handle(new LoginCommand("nobody", "demo"), CancellationToken.None);
 

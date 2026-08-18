@@ -6,16 +6,11 @@ namespace Application.Auth.Commands.Logout;
 public class LogoutCommandHandler : IRequestHandler<LogoutCommand>
 {
     private readonly IJwtTokenService _jwtTokenService;
-    private readonly IRefreshTokenStore _refreshTokenStore;
     private readonly ITokenBlacklist _tokenBlacklist;
 
-    public LogoutCommandHandler(
-        IJwtTokenService jwtTokenService,
-        IRefreshTokenStore refreshTokenStore,
-        ITokenBlacklist tokenBlacklist)
+    public LogoutCommandHandler(IJwtTokenService jwtTokenService, ITokenBlacklist tokenBlacklist)
     {
         _jwtTokenService = jwtTokenService;
-        _refreshTokenStore = refreshTokenStore;
         _tokenBlacklist = tokenBlacklist;
     }
 
@@ -35,7 +30,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand>
             var validation = _jwtTokenService.ValidateRefreshToken(request.RefreshToken);
             if (validation is not null)
             {
-                await _refreshTokenStore.RevokeAsync(validation.Jti, cancellationToken);
+                await _tokenBlacklist.BlacklistAsync(validation.Jti, validation.ExpiresAtUtc, cancellationToken);
             }
         }
     }
