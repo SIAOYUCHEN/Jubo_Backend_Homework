@@ -23,21 +23,22 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
 
     public async Task<AuthResultDto> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
-        var userId = await _refreshTokenStore.GetUserIdAsync(request.RefreshToken, cancellationToken);
-        if (userId is null)
+        var validation = _jwtTokenService.ValidateRefreshToken(request.RefreshToken);
+        if (validation is null || !await _refreshTokenStore.IsActiveAsync(validation.Jti, cancellationToken))
         {
             throw new RefreshTokenInvalidException();
         }
 
-        // Rotate: revoke the presented token before issuing a new one.
-        await _refreshTokenStore.RevokeAsync(request.RefreshToken, cancellationToken);
+        // Rotate: revoke the presented jti before issuing a new one.
+        await _refreshTokenStore.RevokeAsync(validation.Jti, cancellationToken);
 
-        var user = await _context.Users.FindAsync(new object?[] { userId.Value }, cancellationToken)
+        var user = await _context.Users.FindAsync(new object?[] { validation.UserId }, cancellationToken)
             ?? throw new RefreshTokenInvalidException();
 
         var accessToken = _jwtTokenService.GenerateAccessToken(user);
-        var newRefreshToken = await _refreshTokenStore.IssueAsync(user.Id, cancellationToken);
+        var newRefreshToken = _jwtTokenService.GenerateRefreshToken(user.Id);
+        await _refreshTokenStore.RegisterAsync(newRefreshToken.Jti, user.Id, cancellationToken);
 
-        return new AuthResultDto { AccessToken = accessToken, RefreshToken = newRefreshToken };
+        return new AuthResultDto { AccessToken = accessToken, RefreshToken = newRefreshToken.Token };
     }
 }

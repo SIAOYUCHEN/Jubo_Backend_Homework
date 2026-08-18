@@ -72,6 +72,7 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var newRefreshToken = CookieHelper.ExtractCookieValue(refreshResponse, RefreshCookieName);
         newRefreshToken.Should().NotBe(refreshToken);
+        var newAccessToken = (await refreshResponse.Content.ReadFromJsonAsync<AccessTokenResponse>())!.AccessToken;
 
         // the old refresh token must no longer work (rotation revokes it)
         using var reuseOldTokenRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
@@ -81,9 +82,10 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
         var reuseError = await reuseOldTokenResponse.Content.ReadFromJsonAsync<ErrorResponse>();
         reuseError!.ErrorCode.Should().Be("REFRESH_INVALID");
 
-        // 6. Logout revokes the current refresh token
+        // 6. Logout revokes the current refresh token AND blacklists the current access token
         using var logoutRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout");
         CookieHelper.AttachCookie(logoutRequest, RefreshCookieName, newRefreshToken);
+        CookieHelper.AttachBearerToken(logoutRequest, newAccessToken);
         var logoutResponse = await client.SendAsync(logoutRequest);
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
@@ -91,6 +93,13 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
         CookieHelper.AttachCookie(refreshAfterLogoutRequest, RefreshCookieName, newRefreshToken);
         var refreshAfterLogoutResponse = await client.SendAsync(refreshAfterLogoutRequest);
         refreshAfterLogoutResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        // the access token that was still valid at logout time must stop working immediately,
+        // instead of waiting out its natural expiry
+        using var useOldAccessTokenAfterLogoutRequest = new HttpRequestMessage(HttpMethod.Get, "/api/patients");
+        CookieHelper.AttachBearerToken(useOldAccessTokenAfterLogoutRequest, newAccessToken);
+        var useOldAccessTokenAfterLogoutResponse = await client.SendAsync(useOldAccessTokenAfterLogoutRequest);
+        useOldAccessTokenAfterLogoutResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]

@@ -1,13 +1,15 @@
 namespace Application.Common.Interfaces;
 
+/// <summary>
+/// Registry of currently-active refresh token jti's (allowlist). A refresh JWT is only
+/// honored while its jti is registered here — rotation/logout revoke by removing it.
+/// </summary>
 public interface IRefreshTokenStore
 {
-    /// <summary>Issues a new refresh token for the user and persists it. Returns the token value.</summary>
-    Task<string> IssueAsync(Guid userId, CancellationToken cancellationToken);
+    Task RegisterAsync(string jti, Guid userId, CancellationToken cancellationToken);
 
-    /// <summary>Returns the owning user id if the token is present and not expired, otherwise null.</summary>
-    Task<Guid?> GetUserIdAsync(string token, CancellationToken cancellationToken);
+    Task<bool> IsActiveAsync(string jti, CancellationToken cancellationToken);
 
-    /// <summary>Revokes a token. No-op if it doesn't exist.</summary>
-    Task RevokeAsync(string token, CancellationToken cancellationToken);
+    /// <summary>Revokes a jti. No-op if it doesn't exist.</summary>
+    Task RevokeAsync(string jti, CancellationToken cancellationToken);
 }

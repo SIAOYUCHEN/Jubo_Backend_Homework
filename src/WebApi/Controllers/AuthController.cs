@@ -47,13 +47,22 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        if (Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken) && !string.IsNullOrEmpty(refreshToken))
+        Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken);
+        var accessToken = ExtractBearerToken();
+
+        if (!string.IsNullOrEmpty(refreshToken) || !string.IsNullOrEmpty(accessToken))
         {
-            await _sender.Send(new LogoutCommand(refreshToken), cancellationToken);
+            await _sender.Send(new LogoutCommand(refreshToken, accessToken), cancellationToken);
         }
 
         Response.Cookies.Delete(RefreshTokenCookieName);
         return NoContent();
+    }
+
+    private string? ExtractBearerToken()
+    {
+        var header = Request.Headers.Authorization.ToString();
+        return header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? header["Bearer ".Length..] : null;
     }
 
     private void SetRefreshTokenCookie(string refreshToken)

@@ -17,9 +17,9 @@ public class LoginCommandHandlerTests
         using var context = TestDbContextFactory.Create();
         var jwtService = new Mock<IJwtTokenService>();
         jwtService.Setup(s => s.GenerateAccessToken(It.IsAny<User>())).Returns("access-token");
+        jwtService.Setup(s => s.GenerateRefreshToken(SeedData.DemoUserId))
+            .Returns(new RefreshTokenIssueResult("refresh-token", "jti-1"));
         var refreshStore = new Mock<IRefreshTokenStore>();
-        refreshStore.Setup(s => s.IssueAsync(SeedData.DemoUserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync("refresh-token");
 
         var handler = new LoginCommandHandler(context, jwtService.Object, refreshStore.Object);
 
@@ -27,6 +27,7 @@ public class LoginCommandHandlerTests
 
         result.AccessToken.Should().Be("access-token");
         result.RefreshToken.Should().Be("refresh-token");
+        refreshStore.Verify(s => s.RegisterAsync("jti-1", SeedData.DemoUserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -5,9 +5,9 @@ using StackExchange.Redis;
 namespace Infrastructure.Auth;
 
 /// <summary>
-/// Refresh tokens are opaque GUIDs. Redis key is "refresh:{jti}" -> value is the owning
-/// user id, with a TTL matching the refresh token lifetime. Deleting the key revokes it
-/// immediately (used for logout and rotation).
+/// Allowlist of active refresh token jti's. Redis key is "refresh:{jti}" -> owning user id,
+/// with a TTL matching the refresh token lifetime. Deleting the key revokes it immediately
+/// (used for logout and rotation) even though the JWT itself would still validate.
 /// </summary>
 public class RedisRefreshTokenStore : IRefreshTokenStore
 {
@@ -22,24 +22,21 @@ public class RedisRefreshTokenStore : IRefreshTokenStore
         _settings = settings.Value;
     }
 
-    public async Task<string> IssueAsync(Guid userId, CancellationToken cancellationToken)
+    public Task RegisterAsync(string jti, Guid userId, CancellationToken cancellationToken)
     {
-        var jti = Guid.NewGuid().ToString("N");
         var db = _redis.GetDatabase();
-        await db.StringSetAsync(KeyPrefix + jti, userId.ToString(), TimeSpan.FromDays(_settings.ExpiryDays));
-        return jti;
+        return db.StringSetAsync(KeyPrefix + jti, userId.ToString(), TimeSpan.FromDays(_settings.ExpiryDays));
     }
 
-    public async Task<Guid?> GetUserIdAsync(string token, CancellationToken cancellationToken)
+    public async Task<bool> IsActiveAsync(string jti, CancellationToken cancellationToken)
     {
         var db = _redis.GetDatabase();
-        var value = await db.StringGetAsync(KeyPrefix + token);
-        return value.HasValue && Guid.TryParse(value.ToString(), out var userId) ? userId : null;
+        return await db.KeyExistsAsync(KeyPrefix + jti);
     }
 
-    public Task RevokeAsync(string token, CancellationToken cancellationToken)
+    public Task RevokeAsync(string jti, CancellationToken cancellationToken)
     {
         var db = _redis.GetDatabase();
-        return db.KeyDeleteAsync(KeyPrefix + token);
+        return db.KeyDeleteAsync(KeyPrefix + jti);
     }
 }

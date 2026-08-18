@@ -33,8 +33,9 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResultDto>
         }
 
         var accessToken = _jwtTokenService.GenerateAccessToken(user);
-        var refreshToken = await _refreshTokenStore.IssueAsync(user.Id, cancellationToken);
+        var refreshToken = _jwtTokenService.GenerateRefreshToken(user.Id);
+        await _refreshTokenStore.RegisterAsync(refreshToken.Jti, user.Id, cancellationToken);
 
-        return new AuthResultDto { AccessToken = accessToken, RefreshToken = refreshToken };
+        return new AuthResultDto { AccessToken = accessToken, RefreshToken = refreshToken.Token };
     }
 }

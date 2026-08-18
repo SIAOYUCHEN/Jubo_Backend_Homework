@@ -30,6 +30,7 @@ public static class DependencyInjection
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IRefreshTokenStore, RedisRefreshTokenStore>();
+        services.AddScoped<ITokenBlacklist, RedisTokenBlacklist>();
 
         return services;
     }

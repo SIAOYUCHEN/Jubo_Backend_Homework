@@ -1,6 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
 using Application;
+using Application.Common.Interfaces;
 using Infrastructure;
 using Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -48,12 +50,26 @@ builder.Services
 
         options.Events = new JwtBearerEvents
         {
+            OnTokenValidated = async context =>
+            {
+                var jti = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (jti is null)
+                {
+                    return;
+                }
+
+                var blacklist = context.HttpContext.RequestServices.GetRequiredService<ITokenBlacklist>();
+                if (await blacklist.IsBlacklistedAsync(jti, context.HttpContext.RequestAborted))
+                {
+                    context.Fail("Access token has been revoked.");
+                }
+            },
             OnChallenge = async context =>
             {
                 context.HandleResponse();
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                var body = new ErrorResponse("Access token is missing or expired.", "TOKEN_EXPIRED");
+                var body = new ErrorResponse("Access token is missing, expired, or revoked.", "TOKEN_EXPIRED");
                 await context.Response.WriteAsync(JsonSerializer.Serialize(body, ErrorResponse.SerializerOptions));
             },
         };
