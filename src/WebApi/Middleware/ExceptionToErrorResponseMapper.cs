@@ -19,6 +19,10 @@ public static class ExceptionToErrorResponseMapper
             StatusCodes.Status401Unauthorized,
             new ErrorResponse("Invalid username or password.", "INVALID_CREDENTIALS")),
 
+        AccountLockedException accountLockedException => (
+            StatusCodes.Status401Unauthorized,
+            new ErrorResponse(accountLockedException.Message, "ACCOUNT_LOCKED")),
+
         RefreshTokenInvalidException => (
             StatusCodes.Status401Unauthorized,
             new ErrorResponse("Refresh token is missing, expired, or already revoked.", "REFRESH_INVALID")),

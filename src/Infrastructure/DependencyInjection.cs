@@ -24,12 +24,14 @@ public static class DependencyInjection
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<RefreshTokenSettings>(configuration.GetSection(RefreshTokenSettings.SectionName));
+        services.Configure<AccountLockoutSettings>(configuration.GetSection(AccountLockoutSettings.SectionName));
 
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis") ?? "localhost:6379"));
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ITokenBlacklist, RedisTokenBlacklist>();
+        services.AddScoped<IAccountLockoutStore, RedisAccountLockoutStore>();
 
         return services;
     }

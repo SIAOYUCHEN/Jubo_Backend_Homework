@@ -115,6 +115,28 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Login_ThreeFailedAttempts_LocksAccountEvenWithCorrectPasswordAfterward()
+    {
+        using var client = _factory.CreateClient();
+        const string username = "lockout-test-user";
+
+        for (var i = 0; i < 3; i++)
+        {
+            var failedResponse = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(username, "wrong-password"));
+            failedResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            (await failedResponse.Content.ReadFromJsonAsync<ErrorResponse>())!.ErrorCode.Should().Be("INVALID_CREDENTIALS");
+        }
+
+        // even the correct password must now be rejected — the account is locked, not just the wrong password
+        var lockedResponse = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(username, "demo"));
+
+        lockedResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var body = await lockedResponse.Content.ReadFromJsonAsync<ErrorResponse>();
+        body!.ErrorCode.Should().Be("ACCOUNT_LOCKED");
+        body.Message.Should().Contain("seconds");
+    }
+
+    [Fact]
     public async Task ProtectedEndpoint_WithoutToken_Returns401WithTokenExpiredCode()
     {
         using var client = _factory.CreateClient();
